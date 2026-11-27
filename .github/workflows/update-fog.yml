@@ -1,0 +1,41 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/
+
+# This workflow periodically calls the fog-update-bot action to update
+# the list of FOG metrics.yaml and ping.yaml files from its metrics_index.py
+
+
+name: "Update FOG"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  schedule:
+    # 04:20 UTC - every morning
+    # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+    - cron: '20 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: "Update FOG"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: astral-sh/setup-uv@v9.0.0
+
+      - name: "Update FOG"
+        id: fog-updater
+        if: github.repository == 'mozilla/probe-scraper'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run --project fog-updater fog-updater
